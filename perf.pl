@@ -2,18 +2,21 @@
 
 use strict;
 use warnings;
-use Data::Dumper;
+use File::Which;
 use Monitoring::Livestatus::Class;
 use Monitoring::Generator::TestConfig;
 
 die('please only run in a OMD site') unless defined $ENV{'OMD_SITE'};
+$ENV{'PATH'} .= $ENV{'PATH'}.':/usr/sbin';
 
 ############################################################
 # Settings
+my $verbose = 0;
 my $num_services_to_test = [1,10,100,500,1000,2000,5000,7500,10000,15000,20000];
 my $reqs    = 100;
 my $concur  = 5;
 my $site    = $ENV{'OMD_SITE'};
+my $AB      = which('ab') || die "Cannot locate apache benchmark tool ab";
 my $csvsep  = ';';
 my $tests   = {
    'Tactical Overview' => {
@@ -41,7 +44,7 @@ my $tests   = {
 ############################################################
 # prepare our site
 chdir($ENV{'OMD_ROOT'});
-system('omd start');
+system('omd start >/dev/null 2>&1');
 
 ############################################################
 # run the benchmark
@@ -51,16 +54,17 @@ for my $num (@{$num_services_to_test}) {
     unlink('./var/nagios/retention.dat');
     prepare_test($num);
     for my $test (keys %{$tests}) {
+        print "$test:\n";
         for my $tool (keys %{$tests->{$test}}) {
             my $url = $tests->{$test}->{$tool};
-            my($avg1) = bench($url);
-            sleep(1);
-            my($avg2) = bench($url);
-            sleep(1);
-            my($avg3) = bench($url);
-            my $avg = $avg1;
-            $avg = $avg2 if $avg2 ne '' and $avg2 < $avg;
-            $avg = $avg3 if $avg3 ne '' and $avg3 < $avg;
+            my @avgs;
+            for (1..5) {
+                my($avg) = bench($url);
+                sleep(1);
+                push @avgs, $avg if $avg ne '';
+            }
+            @avgs = sort { $a <=> $b } @avgs;
+            my $avg = defined $avgs[0] ? $avgs[0] : '';
             print "$tool ($num) -> $avg\n";
             push @{$result->{$test}->{$tool}}, sprintf "%.2f ",$avg/1000;
             sleep(3);
@@ -88,8 +92,8 @@ sub bench {
     my $nr  = shift || 0;
     return '' if $nr >= 3;
 
-    my $cmd = "/usr/sbin/ab -n $reqs -c $concur -A omdadmin:omd '$url'";
-    print "cmd: $cmd\n";
+    my $cmd = "$AB -n $reqs -c $concur -A omdadmin:omd '$url'";
+    print "cmd: $cmd\n" if $verbose;
     my $out = `$cmd 2>&1`;
     $out =~ m/Failed\s+requests:\s+(\d+)/mx;
     my $failed = $1;
@@ -174,5 +178,10 @@ sub create_test_config {
        'routercount'       => 0,
        'services_per_host' => 1,
    );
+   open(CPOUT, ">&STDOUT");
+   open(STDOUT, ">/dev/null") || die "Error stdout: $!";
    $ngt->create();
+   close(STDOUT) || die "Can't close STDOUT: $!";
+   open(STDOUT, ">&CPOUT") || die "Can't restore stdout: $!";
+   close(CPOUT);
 }
