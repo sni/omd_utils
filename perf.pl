@@ -6,12 +6,14 @@ use Data::Dumper;
 use Monitoring::Livestatus::Class;
 use Monitoring::Generator::TestConfig;
 
+die('please only run in a OMD site') unless defined $ENV{'OMD_SITE'};
+
 ############################################################
 # Settings
 my $num_services_to_test = [1,10,100,500,1000,2000,5000,7500,10000,15000,20000];
 my $reqs    = 100;
 my $concur  = 5;
-my $site    = $ENV{'OMD_SITE'} || 'perf';
+my $site    = $ENV{'OMD_SITE'};
 my $csvsep  = ';';
 my $tests   = {
    'Tactical Overview' => {
@@ -38,6 +40,7 @@ my $tests   = {
 
 ############################################################
 # prepare our site
+cd($ENV{'OMD_ROOT'});
 system('omd start');
 
 ############################################################
