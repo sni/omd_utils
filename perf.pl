@@ -51,10 +51,11 @@ system('omd start >/dev/null 2>&1');
 my $result = {};
 for my $num (@{$num_services_to_test}) {
     system('>./var/nagios/livestatus.log');
+    system('>./var/nagios/nagios.log');
     unlink('./var/nagios/retention.dat');
     prepare_test($num);
     for my $test (keys %{$tests}) {
-        print "$test:\n";
+        print "$test - $num services:\n";
         for my $tool (keys %{$tests->{$test}}) {
             my $url = $tests->{$test}->{$tool};
             my @avgs;
@@ -65,7 +66,7 @@ for my $num (@{$num_services_to_test}) {
             }
             @avgs = sort { $a <=> $b } @avgs;
             my $avg = defined $avgs[0] ? $avgs[0] : '';
-            print "$tool ($num) -> $avg\n";
+            print "$tool -> avg $avg ms\n";
             push @{$result->{$test}->{$tool}}, sprintf "%.2f ",$avg/1000;
             sleep(3);
         }
