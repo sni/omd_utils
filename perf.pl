@@ -72,7 +72,7 @@ for my $num (@{$num_services_to_test}) {
 # print result as csv
 for my $test (keys %{$tests}) {
     print $test."\n";
-    print 'Services'.$csvsep.join($csvsep, sort @{$num_services_to_test})."\n";
+    print 'Services'.$csvsep.join($csvsep, @{$num_services_to_test})."\n";
     for my $tool (keys %{$tests->{$test}}) {
         print $tool.$csvsep.join($csvsep, @{$result->{$test}->{$tool}})."\n";
     }
