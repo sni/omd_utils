@@ -12,7 +12,7 @@ $ENV{'PATH'} .= $ENV{'PATH'}.':/usr/sbin';
 ############################################################
 # Settings
 my $verbose = 0;
-my $num_services_to_test = [1,10,100,500,1000,2000,5000,7500,10000,15000,20000];
+my $num_services_to_test = [1,10,100,500,1000,2000,5000,7500,10000,15000,20000,25000,30000];
 my $reqs    = 100;
 my $concur  = 5;
 my $site    = $ENV{'OMD_SITE'};
@@ -67,7 +67,7 @@ for my $num (@{$num_services_to_test}) {
             @avgs = sort { $a <=> $b } @avgs;
             my $avg = defined $avgs[0] ? $avgs[0] : '';
             print "$tool -> avg $avg ms\n";
-            push @{$result->{$test}->{$tool}}, sprintf "%.2f ",$avg/1000;
+            push @{$result->{$test}->{$tool}}, $avg ne '' ? sprintf "%.2f ",$avg/1000 : '';
             sleep(3);
         }
     }
@@ -105,7 +105,7 @@ sub bench {
     $out =~ m/Time\s+per\s+request:\s+([\d\.]+)/mx;
     my $avg = $1;
 
-    if($failed > 0 or $complete != $reqs) {
+    if(($failed > 0 and $failed / $reqs > 0.15) or $complete != $reqs) {
         print "ERROR: complete:$complete, failed:$failed, avg:$avg in $url\n";
         $nr++;
         sleep(3);
