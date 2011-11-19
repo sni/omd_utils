@@ -44,7 +44,8 @@ for theme in $(ls -1 $THRUK/plugins/plugins-enabled/); do
 done
 
 sed -e "s|/omd/sites/$OMD_SITE/share/thruk|$THRUK|g" \
-    -i ~/etc/thruk/apache.conf
+    -i ~/etc/thruk/apache.conf \
+    -i ~/etc/thruk/fcgid_env.sh
 
 echo "installation finished"
 
