@@ -1,0 +1,19 @@
+Thruk Developer integrates Thruks current git verion into OMD
+
+### WARNING ###
+this step cannot be reverted by script, so only do this in test sites!
+
+
+All steps have to be done as site user
+
+1. clone thruk from github
+
+   %> cd ~/local/share && git clone git://github.com/sni/Thruk.git
+
+2. run the install script
+
+   %> omd_utils/thruk_developer/install.sh ~/local/share/Thruk
+
+3. start omd
+
+   %> omd start
