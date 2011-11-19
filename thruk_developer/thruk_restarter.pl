@@ -8,7 +8,7 @@ use File::Spec;
 
 ############################################################
 # Settings
-my $app_root = '/opt/projects/git/Thruk';
+my $app_root = '###THRUK###';
 my $pidfile  = $ENV{'OMD_ROOT'}."/tmp/run/thruk_restarter.lock";
 
 ############################################################
