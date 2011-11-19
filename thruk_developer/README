@@ -10,10 +10,14 @@ All steps have to be done as site user
 
    %> cd ~/local/share && git clone git://github.com/sni/Thruk.git
 
-2. run the install script
+2. clone omd utils from github
 
-   %> omd_utils/thruk_developer/install.sh ~/local/share/Thruk
+   %> cd ~/local/share && git clone git://github.com/sni/omd_utils.git
 
-3. start omd
+3. run the install script
+
+   %> ~/local/share/omd_utils/thruk_developer/install.sh ~/local/share/Thruk
+
+4. start omd
 
    %> omd start
