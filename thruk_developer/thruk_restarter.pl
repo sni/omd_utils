@@ -15,7 +15,7 @@ my $pidfile  = $ENV{'OMD_ROOT'}."/tmp/run/thruk_restarter.lock";
 _check_lock();
 
 ############################################################
-my $filter   = qr/(?:\/|^)(?![.#_]).+(?:\.yml$|\.yaml$|\.conf|\.pm)$/;
+my $filter   = qr/(?:\/|^)(?![.#_]).+(?:\.yml$|\.yaml$|\.conf|\.pm|\.tt)$/;
 my $exclude  = [
         File::Spec->catdir($app_root, 't'),
         File::Spec->catdir($app_root, 'root'),
@@ -23,10 +23,11 @@ my $exclude  = [
 ];
 my $watcher =
     File::ChangeNotify->instantiate_watcher(
-        directories => [ 
+        directories => [
                          $app_root."/lib",
                          $app_root."/plugins",
                          $app_root."/script",
+                         $app_root."/templates",
                          $ENV{'OMD_ROOT'}.'/etc/thruk'
                        ],
         filter      => $filter,

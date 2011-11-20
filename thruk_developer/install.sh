@@ -11,6 +11,12 @@ if [ -z $OMD_ROOT ]; then
     exit 1;
 fi
 
+if [ ! -s $THRUK/lib/Thruk.pm ]; then
+    echo "Thruk folder $THRUK is not a valid.";
+    exit 1;
+fi
+
+
 # check perl modules
 for mod in File::ChangeNotify File::Spec; do
     perl -M$mod -e 'exit' >/dev/null 2>&1 || {
