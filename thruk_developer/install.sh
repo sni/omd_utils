@@ -1,5 +1,37 @@
 #!/bin/bash
 
+function realpath {
+    local path="${1:-.}"
+    local back="$PWD"
+    if [ -d "$path" ]; then
+        cd "$path"
+        /bin/pwd
+        cd "$back"
+        return 0
+    fi
+    local link ls tries=0 
+    while [ -h "$path" ]; do
+        ls=$(ls -ld "$path")
+        link=$(expr "$ls" : '.*-> \(.*\)$')
+        if expr >/dev/null "$link" : '/.*' 
+        then path="$link"
+        else path=$(dirname "$path")/"$link"
+        fi
+        tries=$((tries + 1))
+        [ "$tries" -gt 100 ] && break
+    done
+    if [ ! -e "$path" ]; then
+        echo "realpath error: $path does not exist"
+        return 1
+    fi
+    link=$(basename "$path")
+    path=$(dirname "$path") 
+    cd "$path"
+    echo "$(/bin/pwd)"/"$link"
+    cd "$back"
+}
+
+
 if [ -z $1 ]; then
     echo "usage: $0 <path to thruk git clone directory>";
     exit 1;
