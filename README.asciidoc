@@ -3,6 +3,7 @@ OMD Utils
 
 Just a few unsorted utilities for OMD (omddistro.org).
 
- - benchmark: compare response times of OMD GUIs (Nagios, Icinga,
-   Thruk)
+ - benchmark:
+     -gui: compare response times of OMD GUIs (Nagios, Icinga, Thruk)
+     -core: compare core check execution
  - thruk_developer: tools to integrate latest Thruk git version in OMD
