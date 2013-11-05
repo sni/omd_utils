@@ -39,7 +39,7 @@ fi
 THRUK=$1
 
 if [ -z $OMD_ROOT ]; then
-    echo "Thruk Restart can only be used with OMD";
+    echo "Thruk Developer is intented for OMD only";
     exit 1;
 fi
 
@@ -48,6 +48,19 @@ if [ ! -s $THRUK/lib/Thruk.pm ]; then
     exit 1;
 fi
 
+echo ""
+echo ""
+echo "STOP! this command is supposed to run in development sites only"
+echo "it cannot be undone and will break normal OMD updates."
+echo "This site cannot be used for anything except thruk afterwards."
+echo ""
+echo -n "continue? [y|N] > "
+read -a key -n 1
+echo ""
+if [ "$key" != 'y' ]; then
+    echo "canceled"
+    exit 1;
+fi
 
 # check perl modules
 for mod in File::ChangeNotify File::Spec; do
@@ -84,6 +97,11 @@ done
 sed -e "s|/omd/sites/$OMD_SITE/share/thruk|$THRUK|g" \
     -i ~/etc/thruk/apache.conf \
     -i ~/etc/thruk/fcgid_env.sh
+
+sed -e 's/^exec/export PERL5LIB="$PERL5LIB:$OMD_ROOT\/share\/thruk\/lib\/";\nexec/' \
+    -i ~/etc/thruk/fcgid_env.sh
+
+omd reload apache
 
 echo "installation finished"
 
