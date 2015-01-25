@@ -7,14 +7,15 @@ use Data::Dumper;
 
 my $siteconfig = {
     'nagios3'         => { core => 'nagios'  },
-    'nagios4'         => { core => 'nagios4' },
-    'icinga'          => { core => 'icinga'  },
+    'naemon'          => { core => 'naemon' },
+    'icinga1'         => { core => 'icinga'  },
+    'icinga2'         => { core => 'icinga2'  },
     'shinken'         => { core => 'shinken' },
     'nagios3_gearman' => { core => 'nagios',  extra_command => 'omd config set MOD_GEARMAN on'  },
-    'nagios4_gearman' => { core => 'nagios4', extra_command => 'omd config set MOD_GEARMAN on'  },
-    'icinga_gearman'  => { core => 'nagios',  extra_command => 'omd config set MOD_GEARMAN on'  },
+    'naemon_gearman'  => { core => 'naemon', extra_command => 'omd config set MOD_GEARMAN on'  },
+    'icinga_gearman'  => { core => 'icinga',  extra_command => 'omd config set MOD_GEARMAN on'  },
 };
-my @sites = qw/nagios3 nagios4 icinga nagios3_gearman nagios4_gearman icinga_gearman shinken/;
+my @sites = qw/nagios3 naemon icinga1 icinga2 shinken nagios3_gearman naemon_gearman icinga_gearman/;
 my $plugins = [ 'simple', 'simple.pl', 'simple.sh', 'benchmark.pl', 'create_test_config.pl', 'big.pl', 'big_epn.pl', 'simple_epn.pl' ];
 
 #################################################
@@ -39,6 +40,10 @@ sub usage {
 
 #################################################
 sub create_sites {
+    my $proxy = "";
+    for my $key (qw/HTTP_PROXY HTTPS_PROXY http_proxy https_proxy/) {
+        if($ENV{$key}) { $proxy .= " ".$key."=".$ENV{$key}; }
+    }
     for my $site (@sites) {
         my $core = $siteconfig->{$site}->{core} || die("unknown site: $site");
         print "creating ".$site."...";
@@ -46,12 +51,13 @@ sub create_sites {
         print " done\n";
 
         print "  -> set core...";
+        `omd stop $site 2>/dev/null`;
         `omd config $site set CORE $core`;
         `omd config $site set AUTOSTART off`;
         print " done\n";
 
         print "  -> install perl modules...";
-        `su - $site -c 'yes yes | /usr/bin/env perl -MCPAN -e "notest install Monitoring::Generator::TestConfig"'`;
+        `su - $site -c '$proxy cpanm -n Monitoring::Generator::TestConfig'`;
         print " done\n";
 
         update_plugins($site);

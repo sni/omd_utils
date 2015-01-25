@@ -1,7 +1,7 @@
 #TEST_DURATION=600
 #TEST_HOSTS=5
 #TEST_SERVICES=50
-TEST_SITES=nagios3 nagios4 icinga nagios3_gearman nagios4_gearman icinga_gearman
+TEST_SITES=nagios3 naemon icinga1 icinga2 nagios3_gearman naemon_gearman icinga1_gearman shinken
 TEST_COMMANDS=simple simple.sh simple.pl simple_epn.pl big.pl big_epn.pl
 
 testall:
