@@ -7,13 +7,13 @@ use Data::Dumper;
 
 my $siteconfig = {
     'nagios3'         => { core => 'nagios'  },
-    'naemon'          => { core => 'naemon' },
+    'naemon'          => { core => 'naemon'  },
     'icinga1'         => { core => 'icinga'  },
-    'icinga2'         => { core => 'icinga2'  },
+    'icinga2'         => { core => 'icinga2' },
     'shinken'         => { core => 'shinken' },
-    'nagios3_gearman' => { core => 'nagios',  extra_command => 'omd config set MOD_GEARMAN on'  },
-    'naemon_gearman'  => { core => 'naemon', extra_command => 'omd config set MOD_GEARMAN on'  },
-    'icinga_gearman'  => { core => 'icinga',  extra_command => 'omd config set MOD_GEARMAN on'  },
+    'nagios3_gearman' => { core => 'nagios', },
+    'naemon_gearman'  => { core => 'naemon', },
+    'icinga_gearman'  => { core => 'icinga', },
 };
 my @sites = qw/nagios3 naemon icinga1 icinga2 shinken nagios3_gearman naemon_gearman icinga_gearman/;
 my $plugins = [ 'simple', 'simple.pl', 'simple.sh', 'benchmark.pl', 'create_test_config.pl', 'big.pl', 'big_epn.pl', 'simple_epn.pl' ];
@@ -65,6 +65,10 @@ sub create_sites {
 
         `su - $site -c "sed -e 's/enable_embedded_perl=0/enable_embedded_perl=1/'                 -i etc/nagios/nagios.d/misc.cfg -i etc/icinga/icinga.d/misc.cfg"`;
         `su - $site -c "sed -e 's/use_embedded_perl_implicitly=1/use_embedded_perl_implicitly=0/' -i etc/nagios/nagios.d/misc.cfg -i etc/icinga/icinga.d/misc.cfg"`;
+
+        if($site =~ m/gearman/mx) {
+            `su - $site -c 'omd config set MOD_GEARMAN on'`;
+        }
 
         my $extra_command = $siteconfig->{$site}->{extra_command};
         if(defined $extra_command) {
