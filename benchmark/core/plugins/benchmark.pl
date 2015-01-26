@@ -18,6 +18,7 @@ my $longinterval   = 60;       # time between saving statistics
 my $updateinterval = 120;      # time between increasing checks is 2 minutes
 my $max_retry      = 3;
 my $startwith      = 10;
+my $resultdir      = $ARGV[0] || die("no result dir given");
 
 ### fixed test, no incease
 my $fixed = 0;
@@ -45,7 +46,7 @@ my $stats = Catalyst::Stats->new;
 ###########################################################
 # clean up
 print $ENV{OMD_SITE}.":\n";
-`rm -f var/nagios/* var/nagios/archive/* var/icinga/* var/icinga/archive/* 2>&1`;
+`rm -f var/nagios/* var/nagios/archive/* var/icinga/* var/icinga/archive/* var/naemon/* var/icinga2/* 2>&1`;
 
 ###########################################################
 # start gently
@@ -74,10 +75,10 @@ my $thr = threads->create(sub {
 
 ###########################################################
 $stats->profile(begin => 'running test');
-print "  -> opening csv...";
 my $plugin = $testplugin;
 $plugin =~ s/^.*\///gmx;
-my $file  = '/opt/share/build/sven/result/'.$ENV{OMD_SITE}.'_'.$plugin.'.csv';
+my $file = $resultdir.'/'.$ENV{OMD_SITE}.'_'.$plugin.'.csv';
+print "  -> opening csv ".$file." ...";
 open(my $fh, '>', $file) or die("failed to open csv $file: $!");
 print $fh join(",",qw/time
                       hostchecks hostcheckrate

@@ -54,6 +54,7 @@ sub create_sites {
         `omd stop $site 2>/dev/null`;
         `omd config $site set CORE $core`;
         `omd config $site set AUTOSTART off`;
+        `omd config $site set PNP4NAGIOS off`;
         print " done\n";
 
         print "  -> install perl modules...";
@@ -78,6 +79,9 @@ sub create_sites {
 
 #################################################
 sub benchmark_sites {
+    chomp(my $pwd = `pwd`);
+    `mkdir -p /var/tmp/coreresults`;
+    `chmod 777 /var/tmp/coreresults`;
     for my $site (@sites) {
         my $command = "";
 
@@ -97,7 +101,7 @@ sub benchmark_sites {
             $command .= "TEST_DURATION=".$ENV{'TEST_DURATION'}." ";
         }
         print "running benchmark: ".$site." ".($command ne '' ? "(".$ENV{'TEST_COMMAND'}.")" : "")." -> ".(scalar localtime)."\n";
-        my $cmd = "nice -n -10 su - $site -c '$command./local/lib/nagios/plugins/benchmark.pl'";
+        my $cmd = "nice -n -10 su - $site -c '$command./local/lib/nagios/plugins/benchmark.pl /var/tmp/coreresults'";
         open(my $ph, "$cmd |") or die("failed to exec '".$cmd."': $!");
         while(<$ph>) { print $_; }
         close($ph);
