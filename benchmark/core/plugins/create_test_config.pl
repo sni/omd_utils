@@ -20,15 +20,19 @@ if(!GetOptions (
 }
 
 #########################################################################
-$opt_p = undef;
+my $service_per_host = 1;
+if($opt_s > 1000) {
+    $service_per_host = 25;
+}
+my $hosts = ceil($opt_s/$service_per_host);
 my $ngt = Monitoring::Generator::TestConfig->new(
                     'verbose'                   => 1,
                     'overwrite_dir'             => 1,
-                    'routercount'               => 10,
+                    'routercount'               => 0,
                     'fixed_length'              => 6,
-                    'hostcount'                 => ceil($opt_s/100),
+                    'hostcount'                 => $hosts,
                     'hostcheckcmd'              => $opt_p,
-                    'services_per_host'         => ceil($opt_s/100),
+                    'services_per_host'         => $service_per_host,
                     'servicecheckcmd'           => $opt_p,
                     'host_settings'             => {
                             'normal_check_interval' => 1,

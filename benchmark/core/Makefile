@@ -3,6 +3,16 @@
 #TEST_SERVICES=50
 TEST_SITES=nagios3 naemon icinga1 icinga2 nagios3_gearman naemon_gearman icinga1_gearman shinken
 TEST_COMMANDS=simple simple.sh simple.pl simple_epn.pl big.pl big_epn.pl
+RESULTS=/var/tmp/coreresults/
+
+all: build create test
+
+missing:
+	for cmd in $(TEST_COMMANDS); do \
+		for site in $(TEST_SITES); do \
+			test -s $(RESULTS)/$${SITE}_$${cmd}.csv TEST_COMMAND="$${cmd}" TEST_SITES="${site}" make test; \
+		done; \
+	done
 
 testall:
 	for cmd in $(TEST_COMMANDS); do \
@@ -11,7 +21,7 @@ testall:
 
 test:
 	@echo "starting test..."
-	./site_control.pl benchmark
+	TEST_RESULTS=$(RESULTS) ./site_control.pl benchmark
 
 build:
 	cd plugins && make

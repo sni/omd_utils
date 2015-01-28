@@ -13,10 +13,11 @@ my $siteconfig = {
     'shinken'         => { core => 'shinken' },
     'nagios3_gearman' => { core => 'nagios', },
     'naemon_gearman'  => { core => 'naemon', },
-    'icinga_gearman'  => { core => 'icinga', },
+    'icinga1_gearman' => { core => 'icinga', },
 };
-my @sites = qw/nagios3 naemon icinga1 icinga2 shinken nagios3_gearman naemon_gearman icinga_gearman/;
+my @sites   = qw/nagios3 naemon icinga1 icinga2 shinken nagios3_gearman naemon_gearman icinga1_gearman/;
 my $plugins = [ 'simple', 'simple.pl', 'simple.sh', 'benchmark.pl', 'create_test_config.pl', 'big.pl', 'big_epn.pl', 'simple_epn.pl' ];
+my $results = $ENV{TEST_RESULTS} || "/var/tmp/coreresults";
 
 #################################################
 if(scalar @ARGV == 0) { usage(); }
@@ -24,8 +25,8 @@ my $action = shift @ARGV;
 if(defined $ENV{'TEST_SITES'}) { @sites = split/\s+/, $ENV{'TEST_SITES'}; }
 if(scalar @ARGV > 0) { @sites = @ARGV; }
 for my $site (@sites) { $site =~ s/"//g };
-if($action eq 'create') { create_sites(); }
-elsif($action eq 'clean')  { clean_sites(); }
+if($action eq 'create')        { create_sites(); }
+elsif($action eq 'clean')      { clean_sites(); }
 elsif($action eq 'benchmark')  { benchmark_sites(); }
 else { print "unknown argument\n\n"; usage(); }
 exit;
@@ -54,11 +55,13 @@ sub create_sites {
         `omd stop $site 2>/dev/null`;
         `omd config $site set CORE $core`;
         `omd config $site set AUTOSTART off`;
+        `omd config $site set CRONTAB off`;
         `omd config $site set PNP4NAGIOS off`;
         print " done\n";
 
         print "  -> install perl modules...";
         `su - $site -c '$proxy cpanm -n Monitoring::Generator::TestConfig'`;
+        `su - $site -c '$proxy cpanm -n Term::Size::Any'`;
         print " done\n";
 
         update_plugins($site);
@@ -67,6 +70,7 @@ sub create_sites {
         `su - $site -c "sed -e 's/use_embedded_perl_implicitly=1/use_embedded_perl_implicitly=0/' -i etc/nagios/nagios.d/misc.cfg -i etc/icinga/icinga.d/misc.cfg"`;
 
         if($site =~ m/gearman/mx) {
+            print "  -> enabling mod-gearman...";
             `su - $site -c 'omd config set MOD_GEARMAN on'`;
         }
 
@@ -84,8 +88,8 @@ sub create_sites {
 #################################################
 sub benchmark_sites {
     chomp(my $pwd = `pwd`);
-    `mkdir -p /var/tmp/coreresults`;
-    `chmod 777 /var/tmp/coreresults`;
+    `mkdir -p $results`;
+    `chmod 777 $results`;
     for my $site (@sites) {
         my $command = "";
 
@@ -105,14 +109,14 @@ sub benchmark_sites {
             $command .= "TEST_DURATION=".$ENV{'TEST_DURATION'}." ";
         }
         print "running benchmark: ".$site." ".($command ne '' ? "(".$ENV{'TEST_COMMAND'}.")" : "")." -> ".(scalar localtime)."\n";
-        my $cmd = "nice -n -10 su - $site -c '$command./local/lib/nagios/plugins/benchmark.pl /var/tmp/coreresults'";
+        my $cmd = "nice -n -10 su - $site -c '$command./local/lib/nagios/plugins/benchmark.pl $results'";
         open(my $ph, "$cmd |") or die("failed to exec '".$cmd."': $!");
         while(<$ph>) { print $_; }
         close($ph);
         print "  -> finished benchmark\n";
-
         print "stoping site...";
         `su - $site -c 'omd stop core'`;
+        `pkill -KILL -u $site`;
         print " done\n";
     }
 }

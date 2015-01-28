@@ -32,15 +32,19 @@ if($fixed) {
 $| = 1;
 my $class = Monitoring::Livestatus::Class->new( peer => 'tmp/run/live');
 my $ls    = $class->table('status')->columns(qw/host_checks service_checks/);
-my $lr    = $class->table('services')->stats([
+my $lr    = sub {
+    my $min1 = time() - 60;
+    return $class->table('services')->stats([
         'total'    => { -isa => { -and => [ 'description' => { '!=' => '' } ]}},
         'pending'  => { -isa => { -and => [ 'has_been_checked' => 0 ]}},
         'ok'       => { -isa => { -and => [ 'has_been_checked' => 1, 'state' => 0 ]}},
         'warning'  => { -isa => { -and => [ 'has_been_checked' => 1, 'state' => 1 ]}},
         'critical' => { -isa => { -and => [ 'has_been_checked' => 1, 'state' => 2 ]}},
         'unknown'  => { -isa => { -and => [ 'has_been_checked' => 1, 'state' => 3 ]}},
+        'lastmin'  => { -isa => { -and => [ 'has_been_checked' => 1, 'last_check' => { '>=' => $min1 } ]}},
         'latency'  => { -isa => [ -avg => 'latency' ]},
-]);
+    ])
+};
 my $stats = Catalyst::Stats->new;
 
 ###########################################################
@@ -99,6 +103,7 @@ my $last_lstat = get_livestatus_stats($ls);
 my $lastcheck  = time();
 my $failed     = 0;
 my $last_inc_check = time();
+my $highest_rate   = 0;
 my($r, $b, $swpd, $free, $buff, $cache, $si, $so, $bi, $bo, $in, $cs, $us, $sy, $id, $wa);
 print "starting loop\n";
 my $scaninterval = $shortinterval;
@@ -107,7 +112,7 @@ while(1) {
         sleep($scaninterval);
         my $now         = time();
         my $lstat       = get_livestatus_stats($ls);
-        $checkstats     = get_livestatus_stats($lr);
+        $checkstats     = get_livestatus_stats(&{$lr}());
         $checkstats->{latency} = 999 unless defined $checkstats->{latency};
         $checkstats->{pending} = 999 unless defined $checkstats->{pending};
         ($rate, $avg)   = update_csv($fh, $start, $now, $lastcheck, $testservices, $last_vmstat, $lstat, $last_lstat, $checkstats);
@@ -124,16 +129,20 @@ while(1) {
     $scaninterval = $longinterval if $id < 30;
 
     # check if there are ressources for more
-    printf("checking... (idle: %d, latency: %.1f, rate: %.1f, expected rate: %.1f)\n", $id, $checkstats->{latency}, $rate, $avg);
-    if(
-       (($checkstats->{ok}+$checkstats->{pending})/$checkstats->{total} > 0.9 # more than 90% of the checks are ok
-        and $checkstats->{latency} <= 10   # latency below 20seconds (seems to be always 0 in nagios4)
-        and ($checkstats->{pending} == 0 or ($checkstats->{pending}/$checkstats->{total}) < 0.5) # less than 50% are pending
-        and $id > 10            # when idling
-        )
-        or $id > 30            # when turbo idling, quick pass
-        or ($rate/$avg > 0.95) # or checkrate is at least 90% of the target
-    ) {
+    printf("checking... (idle: %d, latency: %.1f, rate: %.1f, expected rate: %.1f, max rate: %.1f)\n", $id, $checkstats->{latency}, $rate, $avg, $highest_rate);
+    my $ok = 0;
+    if($id > 50)            { $ok = 1; print "  -> idle $id > 50%\n";  }
+    elsif($rate/$avg > 0.9) { $ok = 1; print "  -> rate ".int($rate)." > 90%\n"; }
+    else {
+        if(!($checkstats->{pending} == 0 or ($checkstats->{pending}/$checkstats->{total})<=0.5))  { print "  -> pending must be less than 50%, have ".int($checkstats->{pending}/$checkstats->{total}*100)."%\n"; }
+        elsif(!(($checkstats->{ok}+$checkstats->{pending})/$checkstats->{total} > 0.7))           { print "  -> ok+pending < 70%\n"; }
+        elsif(!($id > 10))                                                                        { print "  -> idle $id < 10%\n"; }
+        elsif(!($checkstats->{latency} <= 10))                                                    { print "  -> latency > 10\n"; }
+        elsif(!($highest_rate > 10 && $rate > $highest_rate *0.85))                               { print "  -> 85% of highest rate missed\n"; }
+        elsif(!($avg > 50 && $rate/$avg > 0.8))                                                   { print "  -> 80% of expected rate missed, ".int($rate/$avg*100)."\n"; }
+        else { $ok = 1; }
+    }
+    if($ok) {
         my $inc = 10;
         if(   $testservices <   100) { $inc =   10; }
         elsif($testservices <   500) { $inc =   50; }
@@ -153,15 +162,16 @@ while(1) {
         $lastcheck    = time();
         $failed       = 0;
     } else {
-        if($failed >= $max_retry) {
-            print "we are done (".$failed."/".$max_retry.")\n";
+        if(($failed +1) >= $max_retry) {
+            print "we are done (".($failed+1)."/".$max_retry.")\n";
             last;
         } else {
-            print "retry (".$failed."/".$max_retry.")\n";
+            print "retry (".($failed+1)."/".$max_retry.")\n";
         }
         $failed++;
     }
     $last_inc_check = time();
+    $highest_rate   = $rate if $rate > $highest_rate;
 }
 $stats->profile(end => 'running test');
 `killall $testplugin 2>/dev/null`;
@@ -179,13 +189,21 @@ exit;
 # set new services checks
 sub adjust_services {
     my($testservices, $no_restart) = @_;
-    print "  -> setting services to $testservices...";
     my $plugin = $testplugin;
-    if($plugin !~ m/^\//mx) { $testplugin = "\\\$USER2\\\$/$testplugin";  }
-    `./local/lib/nagios/plugins/create_test_config.pl -p $plugin -s $testservices`;
+    #if($plugin !~ m/^\//mx) { $plugin = "\\\$USER2\\\$/$testplugin";  }
+    if($plugin !~ m/^\//mx) { $plugin = $ENV{'OMD_ROOT'}."/local/lib/nagios/plugins/$testplugin";  }
+    print "  -> setting services to $testservices ($plugin)...";
+    `./local/lib/nagios/plugins/create_test_config.pl -p "$plugin" -s "$testservices"`;
+    if($ENV{'OMD_SITE'} =~ m/icinga2/mx) {
+        `cd icinga2-migration/ && ./bin/icinga-conftool migrate v1 ~/etc/icinga/icinga.d/omd.cfg > ~/etc/icinga2/conf.d/migration.conf`;
+    }
     unless($no_restart) {
         unlink('tmp/run/live');
-        `omd reload core`;
+        if($ENV{OMD_SITE} =~ m/shinken/) {
+            `omd restart core`;
+        } else {
+            `omd reload core`;
+        }
         for my $x (1..10) { last if -e 'tmp/run/live'; sleep(1); }
     }
     print " done\n";
@@ -207,6 +225,12 @@ sub update_csv {
     my $servicechecks    = $lstat->{'service_checks'};
     my $servicecheckrate = ($lstat->{'service_checks'}-$last_lstat->{'service_checks'}) / $elapsed;
     my $latency          = $checkstats->{latency};
+
+    if($checkstats->{lastmin} > 0 && $servicecheckrate == 0) {
+        printf("no rate from status table, had to calculate rate from lastchecks...\n");
+        $servicecheckrate = $checkstats->{lastmin}/$checkstats->{total};
+    }
+
     print $fh join(",", ($now-$start),
                         $hostchecks, sprintf("%.2f", $hostcheckrate),
                         $servicechecks, sprintf("%.2f", $servicecheckrate),
@@ -221,15 +245,6 @@ sub update_csv {
                         $us, $sy, $id, $wa,
                         ),"\n";
     $fh->flush;
-if($servicecheckrate < 0) {
-use Data::Dumper; print STDERR Dumper($now);
-use Data::Dumper; print STDERR Dumper($start);
-use Data::Dumper; print STDERR Dumper($lastcheck);
-use Data::Dumper; print STDERR Dumper($elapsed);
-use Data::Dumper; print STDERR Dumper($lstat);
-use Data::Dumper; print STDERR Dumper($last_lstat);
-}
-
     return($servicecheckrate, $avg_checks);
 }
 
@@ -237,7 +252,7 @@ use Data::Dumper; print STDERR Dumper($last_lstat);
 sub get_livestatus_stats {
     my $ls = shift;
     my $stat;
-    for my $x (1..10) {
+    for my $x (1..30) {
         eval {
             alarm(30);
             $stat = $ls->hashref_array()->[0];
@@ -246,7 +261,8 @@ sub get_livestatus_stats {
         alarm(0);
         if($@) {
             sleep(1);
-            if($x == 5) { `omd start core`; }
+            if($x%10 == 0) { `omd restart core`; }
+            elsif($x%5 == 0) { `omd start core`; }
         } else {
             return $stat;
         }
