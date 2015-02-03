@@ -19,6 +19,7 @@ my $updateinterval = 120;      # time between increasing checks is 2 minutes
 my $max_retry      = 3;
 my $startwith      = 10;
 my $resultdir      = $ARGV[0] || die("no result dir given");
+my $nice           = "nice -n 0";
 
 ### fixed test, no incease
 my $fixed = 0;
@@ -62,7 +63,7 @@ my $interval = `grep normal_check_interval recreate.pl|tail -n 1`; $interval =~ 
 # benchmark
 $stats->profile(begin => 'omd start');
 print "  -> starting core...";
-`nice -n 10 omd start`;
+`$nice omd start`;
 for my $x (1..10) { last if -e 'tmp/run/live'; }
 print "  done\n";
 $stats->profile(end => 'omd start');
@@ -76,6 +77,15 @@ my $thr = threads->create(sub {
     }
     close($vp);
 });
+
+###########################################################
+# wait till our cpu usage is low
+my($r, $b, $swpd, $free, $buff, $cache, $si, $so, $bi, $bo, $in, $cs, $us, $sy, $id, $wa) = split/\s+/, $last_vmstat;
+while($id < 90) {
+    print "  -> waiting for start, cpu idle ".$id."% ...";
+    sleep 3;
+    ($r, $b, $swpd, $free, $buff, $cache, $si, $so, $bi, $bo, $in, $cs, $us, $sy, $id, $wa) = split/\s+/, $last_vmstat;
+}
 
 ###########################################################
 $stats->profile(begin => 'running test');
@@ -104,7 +114,6 @@ my $lastcheck  = time();
 my $failed     = 0;
 my $last_inc_check = time();
 my $highest_rate   = 0;
-my($r, $b, $swpd, $free, $buff, $cache, $si, $so, $bi, $bo, $in, $cs, $us, $sy, $id, $wa);
 print "starting loop\n";
 my $scaninterval = $shortinterval;
 while(1) {
@@ -190,9 +199,8 @@ exit;
 sub adjust_services {
     my($testservices, $no_restart) = @_;
     my $plugin = $testplugin;
-    #if($plugin !~ m/^\//mx) { $plugin = "\\\$USER2\\\$/$testplugin";  }
     if($plugin !~ m/^\//mx) { $plugin = $ENV{'OMD_ROOT'}."/local/lib/nagios/plugins/$testplugin";  }
-    print "  -> setting services to $testservices ($testplugin)...";
+    print "  -> setting services to $testservices (".$ENV{OMD_SITE}." / $testplugin)...";
     `./local/lib/nagios/plugins/create_test_config.pl -p "$plugin" -s "$testservices"`;
     if($ENV{'OMD_SITE'} =~ m/icinga2/mx) {
         unlink("etc/nagios/conf.d/check_mk_templates.cfg");
@@ -206,9 +214,9 @@ sub adjust_services {
     unless($no_restart) {
         unlink('tmp/run/live');
         if($ENV{OMD_SITE} =~ m/shinken/) {
-            `omd restart core`;
+            `$nice omd restart core`;
         } else {
-            `omd reload core`;
+            `$nice omd reload core`;
         }
         for my $x (1..10) { last if -e 'tmp/run/live'; sleep(1); }
     }
@@ -267,8 +275,8 @@ sub get_livestatus_stats {
         alarm(0);
         if($@) {
             sleep(1);
-            if($x%10 == 0) { `omd restart core`; }
-            elsif($x%5 == 0) { `omd start core`; }
+            if($x%10 == 0) { `$nice omd restart core`; }
+            elsif($x%5 == 0) { `$nice omd start core`; }
         } else {
             return $stat;
         }
