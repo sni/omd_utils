@@ -1,16 +1,21 @@
 #TEST_DURATION=600
 #TEST_HOSTS=5
 #TEST_SERVICES=50
-TEST_SITES=nagios3 naemon icinga1 icinga2 nagios3_gearman naemon_gearman icinga1_gearman shinken
+TEST_SITES=nagios3 naemon icinga1 icinga2 nagios3_gearman naemon_gearman
 TEST_COMMANDS=simple simple.sh simple.pl simple_epn.pl big.pl big_epn.pl
-RESULTS=/var/tmp/coreresults/
+RESULTS=/var/tmp/coreresults
 
 all: build create test
 
 missing:
 	for cmd in $(TEST_COMMANDS); do \
 		for site in $(TEST_SITES); do \
-			test -s $(RESULTS)/$${SITE}_$${cmd}.csv TEST_COMMAND="$${cmd}" TEST_SITES="${site}" make test; \
+			echo $(RESULTS)/$${site}_$${cmd}.csv; \
+			if ! test -s $(RESULTS)/$${site}_$${cmd}.csv; then \
+				make TEST_COMMANDS="$${cmd}" TEST_SITES="$${site}" testall; \
+			else \
+				echo "already exists"; \
+			fi; \
 		done; \
 	done
 

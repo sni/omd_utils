@@ -1,0 +1,302 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN"
+  "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+    <title>Core Benchmarks</title>
+    <script type="text/javascript" src="https://code.jquery.com/jquery-1.11.2.min.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/flot/0.8.3/jquery.flot.min.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/flot/0.8.3/jquery.flot.categories.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.2/js/bootstrap.min.js"></script>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.2/css/bootstrap.min.css">
+    <style type="text/css">
+#tooltip {
+    position: absolute;
+    display: none;
+    border: 1px solid #fdd;
+    padding: 2px;
+    background-color: #fee;
+    opacity: 0.80;
+    z-index: 100;
+}
+body {
+    padding-top: 5px;
+}
+.h1, .h2, .h3, h1, h2, h3 {
+    margin-bottom: 5px;
+    margin-top: 5px;
+}
+.sidenav {
+    margin-top:       40px;
+    margin-bottom:    30px;
+    padding:          2px;
+    background-color: #f8f8f8;
+    border-radius:    5px;
+    border:           1px solid #ddd;
+}
+.nav-tabs > li.active > a, .nav-tabs > li.active > a:hover, .nav-tabs > li.active > a:focus {
+    border-width: 0;
+}
+.sidebar .nav > li > a {
+    display: block;
+    color: #716b7a;
+    padding: 1px 20px;
+    line-height: 16px;
+}
+.sidebar .nav > li > a:hover, .sidebar .nav > li > a:focus {
+    text-decoration: none;
+    background-color: #e5e3e9;
+}
+.sidebar .nav > .active > a, .sidebar .nav > .active:hover > a, .sidebar .nav > .active:focus > a {
+    font-weight: bold;
+    color: #ba3925;
+    background-color: transparent;
+}
+.sidebar .nav .nav {
+    display: none;
+}
+.sidebar .nav > li.active .nav {
+    display:block;
+}
+.sidebar .nav .nav {
+    margin-bottom: 8px;
+}
+.sidebar .nav .nav > li > a {
+    padding-top:    2px;
+    padding-bottom: 0;
+    padding-left: 30px;
+    font-size: 90%;
+    line-height: 16px;
+}
+A.nav_label {
+    visibility: hidden;
+    position: absolute;
+    left: -20px;
+}
+    </style>
+</head>
+
+<body data-spy="scroll" data-offset="50" data-target="#affix-nav">
+
+<div id='tooltip'></div>
+
+<div class="container">
+<div class="row">
+    <div class="col-xs-9 affix-content" data-target="#affix-nav">
+        <div class="col-xs-12" style="min-height: 500px;">
+          <h2>Core Benchmarks</h2>
+          <div id="graphs"></div>
+        </div>
+    </div>
+    <div class="col-xs-3">
+        <nav id="affix-nav" class="sidebar col-md-4 col-sm-4 hidden-xs">
+        <ul class="nav sidenav nav-tabs nav-stacked affix-top shadow" data-spy="affix"></ul>
+        </nav>
+    </div>
+</div>
+<div class="row">
+    <div class="col-xs-9 affix-content" data-target="#affix-nav">
+        <div class="col-xs-12" style="min-height: 500px;">
+          <h2>Conclusion</h2>
+          <div id="conclusion"></div>
+        </div>
+    </div>
+</div>
+</div>
+
+<script type="text/javascript">
+<!--
+var sitesMax = {};
+var plugins = ["simple", "simple.sh", "simple.pl", "simple_epn.pl", "big.pl", "big_epn.pl"];
+var sites   = ["nagios3", "naemon", "icinga1", "icinga2", "nagios3_gearman", "naemon_gearman"];
+var standard_grid = {
+    hoverable: true,
+    backgroundColor: "#F0F0ED"
+};
+standard_legend = {
+    position: 'nw',
+    margin: [10, 40]
+};
+var graph_options = {
+    xaxes: [{
+               min: 0,
+               tickFormatter: function(val, axis) { a=axis; return(val < axis.max ? val : "Time"); }
+    }],
+    yaxes: [{
+               min: 0,
+               tickFormatter: function(val, axis) { return(val < axis.max ? val.toFixed(0) : "Services"); }
+    }, {
+               min: 0,
+               tickFormatter: function(val, axis) { return(val < axis.max ? val.toFixed(0) : "Checks/Sec"); },
+               position: "right"
+    }, {
+               min: 0,
+               max: 100,
+               show: false
+    }],
+    grid:      standard_grid,
+    legend:    standard_legend
+};
+
+jQuery().ready(function() {
+
+    var results = 0;
+    var expect  = plugins.length * sites.length;
+    jQuery.each(sites, function( y, site ) {
+        jQuery('#graphs').append('<div class="panel panel-default"><div class="panel-heading"><h3>'+site+'<\/div><div class="panel-body" id="graphs_'+site+'"><\/div><\/div>');
+        jQuery.each(plugins, function( x, plugin ) {
+            jQuery.ajax({
+                type: "GET",
+                url: site+"_"+plugin+".csv",
+                dataType: "text",
+                success: function(data) {
+                    data = _parse_csv(data);
+                    if(data.length == 0) {
+                        results++;
+                        return;
+                    }
+                    var series = [{
+                        label: '% cpu',
+                        data: [],
+                        yaxis: 3,
+                        lines: {
+                            fill: 0.3,
+                            lineWidth: 0
+                        }
+                    }, {
+                        label: 'services',
+                        data: []
+                    }, {
+                        label: 'servicecheckrate',
+                        data: [],
+                        yaxis: 2
+                    }];
+                    jQuery.each(data, function( x, row ) {
+                        series[0].data.push([row.time, 100-row.cpu_idle]);
+                        series[1].data.push([row.time, row.services]);
+                        series[2].data.push([row.time, row.servicecheckrate]);
+                    });
+                    var graph_id = String('graph_'+site+'_'+plugin).replace(/[^a-zA-Z0-9-_]/, '_');
+                    if(x > 0) { jQuery('#graphs_'+site).append('<hr>'); }
+                    jQuery('#graphs_'+site).append('<h4>Plugin: '+plugin+'<\/h4><div id="'+graph_id+'" style="height: 200px; width: 800px;"><\/div>');
+                    var plot = jQuery.plot('#'+graph_id, series, graph_options);
+                    plot.draw();
+                    /* add hover */
+                    jQuery('#'+graph_id).bind("plothover", function (event, pos, item) {
+                        if (item) {
+                            var services = series[1].data[item.dataIndex][1];
+                            var rate     = series[2].data[item.dataIndex][1];
+                            jQuery("#tooltip").html(rate+" checks/sec at "+services+" total services")
+                                              .css({top: item.pageY+5, left: item.pageX+5})
+                                              .fadeIn(200);
+                        } else {
+                            jQuery("#tooltip").stop(true).hide();
+                        }
+                    });
+                    if(sitesMax[site] == undefined) { sitesMax[site] = {}; }
+                    sitesMax[site][plugin] = plot.getAxes().y2axis.datamax;
+                    results++;
+                    if(results == expect) { drawConclusion(); }
+                },
+                error: function() {
+                    results++;
+                    if(results == expect) { drawConclusion(); }
+                }
+             });
+        });
+    });
+});
+
+function drawConclusion() {
+    jQuery.each(plugins, function( x, plugin ) {
+        var data = [];
+        jQuery.each(sites, function( y, site ) {
+            if(sitesMax[site] && sitesMax[site][plugin] != undefined) {
+                data.push([site, sitesMax[site][plugin]]);
+            } else {
+                data.push([site, 0]);
+            }
+        });
+        var graph_options = {
+            series: {
+                bars: {
+                    show: true,
+                    barWidth: 0.6,
+                    align: "center"
+                }
+            },
+            xaxis: {
+                mode: "categories",
+                tickLength: 0
+            },
+            yaxes: [{
+                    min: 0,
+                    tickFormatter: function(val, axis) { return(val < axis.max ? val.toFixed(0) : "Checks/Sec"); }
+            }],
+            grid:      standard_grid,
+            legend:    standard_legend
+        };
+        var graph_id = String('graph_'+plugin).replace(/[^a-zA-Z0-9-_]/, '_');
+        jQuery('#conclusion').append('<div class="panel panel-default"><div class="panel-heading"><h3>'+plugin+'</h3><\/div><div class="panel-body"><div id="'+graph_id+'" style="height: 200px; width: 800px;"><\/div><\/div><\/div>');
+        var plot = jQuery.plot('#'+graph_id, [data], graph_options);
+        plot.draw();
+
+    });
+    render_navigation();
+}
+
+function _parse_csv(data) {
+  var rows = data.split(/\n/);
+  var cols = rows.shift().split(/,/);
+  var csv  = [];
+  jQuery.each(rows, function( x, line ) {
+    var row = line.split(/,/);
+    if(row.length > 1) {
+        var rowHash = {};
+        jQuery.each(cols, function( y, name ) {
+          if(jQuery.isNumeric(row[y])) {
+            rowHash[name] = Number(row[y]);
+          } else {
+            rowHash[name] = row[y];
+          }
+        });
+        csv.push(rowHash);
+    }
+  });
+  return(csv);
+}
+
+function render_navigation() {
+    jQuery('#affix-nav > UL > LI').remove();
+    jQuery("DIV.container H2").each(function(nr, el) {
+      var label = el.textContent.replace(/<.*?>/,'').replace(/[^a-zA-Z0-9\ _\.\/:]*/g, '').toLowerCase();
+      label = label.replace(/[ \.\/:]+/g, '-');
+      jQuery('<a id="'+label+'" class="nav">').insertBefore(el);
+      var nav_section = jQuery("<li class='"+(nr==0 ? 'active' : '')+"'><a href='#"+label+"'>"+el.textContent+"</a></li>");
+      jQuery('#affix-nav > UL').append(nav_section);
+      var sectionbody = jQuery(el).nextUntil('H3', 'DIV');
+      var sub_elements = jQuery(sectionbody).find('H3');
+      if(sub_elements.size() > 1) {
+          var sub_section = jQuery('<ul class="nav"></ul>');
+          jQuery(nav_section).append(sub_section);
+      }
+      sub_elements.each(function(sub_nr, sub_el) {
+          var sublabel = sub_el.textContent.replace(/[^a-zA-Z0-9\ _\.\/:]*/g, '').toLowerCase();
+          sublabel = sublabel.replace(/[ \.\/:]+/g, '-');
+          jQuery('<a id="'+sublabel+'">').insertBefore(sub_el);
+          if(sub_elements.size() > 1) {
+              jQuery(sub_section).append("<li><a href='#"+sublabel+"'>"+sub_el.textContent+"</a></li>");
+          }
+      });
+    });
+    $('#affix-nav li a').click(function(event) {
+        event.preventDefault();
+        $($(this).attr('href'))[0].scrollIntoView();
+        scrollBy(0, -20);
+    });
+}
+
+-->
+</script>
+
+  </body>
+</html>

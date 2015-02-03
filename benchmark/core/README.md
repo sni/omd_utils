@@ -12,7 +12,7 @@ Initially you have to install a recent omd-nc package:
     gpg --armor --export F8C1CA08A57B9ED7 | apt-key add -
     echo 'deb http://labs.consol.de/repo/testing/debian wheezy main' >> /etc/apt/sources.list
     apt-get update
-    apt-get install apt-get install omd-newcores
+    apt-get install omd-newcores
 
 Then create all required sites by:
 
@@ -22,10 +22,14 @@ Then create all required sites by:
 
 Simply run the tests with:
 
-    make test
+    make testall
 
+Or run tests for a single core with:
+
+    make TEST_SITES=naemon test
 
 == Results
 
-The results are stored in `/var/tmp/coreresults` as csv data. Interpretation and
-creating sweet graphs is left as exercise to the user.
+The results are stored in `/var/tmp/coreresults` as csv data. Interpretation is
+left as exercise to the user. There is a index.html placed in the result folder
+which creates some summary graphs.

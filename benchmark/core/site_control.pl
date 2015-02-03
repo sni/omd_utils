@@ -13,9 +13,8 @@ my $siteconfig = {
     'shinken'         => { core => 'shinken' },
     'nagios3_gearman' => { core => 'nagios', },
     'naemon_gearman'  => { core => 'naemon', },
-    'icinga1_gearman' => { core => 'icinga', },
 };
-my @sites   = qw/nagios3 naemon icinga1 icinga2 shinken nagios3_gearman naemon_gearman icinga1_gearman/;
+my @sites   = qw/nagios3 naemon icinga1 icinga2 shinken nagios3_gearman naemon_gearman/;
 my $plugins = [ 'simple', 'simple.pl', 'simple.sh', 'benchmark.pl', 'create_test_config.pl', 'big.pl', 'big_epn.pl', 'simple_epn.pl' ];
 my $results = $ENV{TEST_RESULTS} || "/var/tmp/coreresults";
 
@@ -45,6 +44,9 @@ sub create_sites {
     for my $key (qw/HTTP_PROXY HTTPS_PROXY http_proxy https_proxy/) {
         if($ENV{$key}) { $proxy .= " ".$key."=".$ENV{$key}; }
     }
+    if($proxy) {
+        print "using proxy settings ".$proxy."\n";
+    }
     for my $site (@sites) {
         my $core = $siteconfig->{$site}->{core} || die("unknown site: $site");
         print "creating ".$site."...";
@@ -72,6 +74,13 @@ sub create_sites {
         if($site =~ m/gearman/mx) {
             print "  -> enabling mod-gearman...";
             `su - $site -c 'omd config set MOD_GEARMAN on'`;
+            print "done\n";
+        }
+
+        if($site =~ m/icinga2/mx) {
+            print "  -> fetching icinga2-migration tool...";
+            `su - $site -c 'test -d icinga2-migration || $proxy git clone https://github.com/Icinga/icinga2-migration.git'`;
+            print "done\n";
         }
 
         my $extra_command = $siteconfig->{$site}->{extra_command};
@@ -90,6 +99,7 @@ sub benchmark_sites {
     chomp(my $pwd = `pwd`);
     `mkdir -p $results`;
     `chmod 777 $results`;
+    `cp resultgraphs.html $results/index.html`;
     for my $site (@sites) {
         my $command = "";
 
@@ -134,12 +144,13 @@ sub clean_sites {
 #################################################
 sub update_plugins {
     my $site = shift;
-    print "  -> copy check plugins\n";
+    print "  -> copy check plugins";
     for my $plugin (@{$plugins}) {
         unlink('/omd/sites/'.$site.'/local/lib/nagios/plugins/'.$plugin);
         cp("plugins/".$plugin,  '/omd/sites/'.$site.'/local/lib/nagios/plugins');
     }
     `chown $site: /omd/sites/$site/local/lib/nagios/plugins/*`;
     `chmod 755 /omd/sites/$site/local/lib/nagios/plugins/*`;
+    print "done\n";
     return;
 }

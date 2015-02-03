@@ -192,10 +192,16 @@ sub adjust_services {
     my $plugin = $testplugin;
     #if($plugin !~ m/^\//mx) { $plugin = "\\\$USER2\\\$/$testplugin";  }
     if($plugin !~ m/^\//mx) { $plugin = $ENV{'OMD_ROOT'}."/local/lib/nagios/plugins/$testplugin";  }
-    print "  -> setting services to $testservices ($plugin)...";
+    print "  -> setting services to $testservices ($testplugin)...";
     `./local/lib/nagios/plugins/create_test_config.pl -p "$plugin" -s "$testservices"`;
     if($ENV{'OMD_SITE'} =~ m/icinga2/mx) {
+        unlink("etc/nagios/conf.d/check_mk_templates.cfg");
+        unlink("etc/nagios/conf.d/jmx4perl_nagios.cfg");
+        unlink("etc/nagios/conf.d/notification_commands.cfg");
+        unlink("etc/nagios/conf.d/timeperiods.cfg");
+        unlink("etc/nagios/conf.d/templates.cfg");
         `cd icinga2-migration/ && ./bin/icinga-conftool migrate v1 ~/etc/icinga/icinga.d/omd.cfg > ~/etc/icinga2/conf.d/migration.conf`;
+        `sed -i -e 's/\\\\@/@/g' etc/icinga2/conf.d/migration.conf`;
     }
     unless($no_restart) {
         unlink('tmp/run/live');
