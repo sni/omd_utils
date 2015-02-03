@@ -80,9 +80,9 @@ my $thr = threads->create(sub {
 
 ###########################################################
 # wait till our cpu usage is low
-my($r, $b, $swpd, $free, $buff, $cache, $si, $so, $bi, $bo, $in, $cs, $us, $sy, $id, $wa) = split/\s+/, $last_vmstat;
-while($id < 90) {
-    print "  -> waiting for start, cpu idle ".$id."% ...";
+my($r, $b, $swpd, $free, $buff, $cache, $si, $so, $bi, $bo, $in, $cs, $us, $sy, $id, $wa);
+while(!defined $last_vmstat || $id < 90) {
+    print "  -> waiting for start, cpu idle ".($id || '?')."% ...\n";
     sleep 3;
     ($r, $b, $swpd, $free, $buff, $cache, $si, $so, $bi, $bo, $in, $cs, $us, $sy, $id, $wa) = split/\s+/, $last_vmstat;
 }
