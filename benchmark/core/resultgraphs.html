@@ -126,7 +126,7 @@ var graph_options = {
                tickFormatter: function(val, axis) { return(val < axis.max ? val.toFixed(0) : "Services"); }
     }, {
                min: 0,
-               tickFormatter: function(val, axis) { return(val < axis.max ? val.toFixed(0) : "Checks/Sec"); },
+               tickFormatter: function(val, axis) { return(val < axis.max ? val.toFixed(axis.max > 10 ? 0 : 1) : "Checks/Sec"); },
                position: "right"
     }, {
                min: 0,
@@ -230,7 +230,7 @@ function drawConclusion() {
             },
             yaxes: [{
                     min: 0,
-                    tickFormatter: function(val, axis) { return(val < axis.max ? val.toFixed(0) : "Checks/Sec"); }
+                    tickFormatter: function(val, axis) { return(val < axis.max ? val.toFixed(axis.max > 10 ? 0 : 1) : "Checks/Sec"); }
             }],
             grid:      standard_grid,
             legend:    standard_legend

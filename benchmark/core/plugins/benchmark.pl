@@ -19,7 +19,7 @@ my $updateinterval = 120;      # time between increasing checks is 2 minutes
 my $max_retry      = 3;
 my $startwith      = 10;
 my $resultdir      = $ARGV[0] || die("no result dir given");
-my $nice           = "nice -n 0";
+my $nice           = "nice -n 10"; # this script runs with -10, so adjust back to 0
 
 ### fixed test, no incease
 my $fixed = 0;
@@ -160,9 +160,8 @@ while(1) {
         elsif($testservices < 20000) { $inc = 1000; }
         elsif($testservices < 50000) { $inc = 5000; }
         else { $inc = 10000; }
-        if($id > 90)    { $inc = $inc * 3; }  # find peak faster
-        elsif($id > 85) { $inc = $inc * 2; }
-        elsif($id < 5)  { $inc = $inc / 3; }
+        if(   $id > 90) { $inc = $inc * 3; }  # find peak faster
+        elsif($id > 70) { $inc = $inc * 2; }
         elsif($id < 10) { $inc = $inc / 2; }
         $testservices += $inc;
         $testservices = ceil(ceil($testservices / $inc)*$inc);
@@ -208,6 +207,8 @@ sub adjust_services {
         unlink("etc/nagios/conf.d/notification_commands.cfg");
         unlink("etc/nagios/conf.d/timeperiods.cfg");
         unlink("etc/nagios/conf.d/templates.cfg");
+        unlink("etc/icinga2/conf.d/services.conf");
+        unlink("etc/icinga2/conf.d/hosts.conf");
         `cd icinga2-migration/ && ./bin/icinga-conftool migrate v1 ~/etc/icinga/icinga.d/omd.cfg > ~/etc/icinga2/conf.d/migration.conf`;
         `sed -i -e 's/\\\\@/@/g' etc/icinga2/conf.d/migration.conf`;
     }

@@ -21,7 +21,7 @@ missing:
 
 testall:
 	for cmd in $(TEST_COMMANDS); do \
-		TEST_COMMAND="$$cmd" TEST_SITES="$(TEST_SITES)" make test; \
+		make TEST_COMMAND="$$cmd" TEST_SITES="$(TEST_SITES)" test; \
 	done
 
 test:
