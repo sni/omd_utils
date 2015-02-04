@@ -6,6 +6,7 @@
     <script type="text/javascript" src="https://code.jquery.com/jquery-1.11.2.min.js"></script>
     <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/flot/0.8.3/jquery.flot.min.js"></script>
     <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/flot/0.8.3/jquery.flot.categories.js"></script>
+    <script type="text/javascript" src="https://raw.githubusercontent.com/winne27/flot-valuelabels/master/jquery.flot.valuelabels.js"></script>
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.2/js/bootstrap.min.js"></script>
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.2/css/bootstrap.min.css">
     <style type="text/css">
@@ -96,8 +97,8 @@ A.nav_label {
 <div class="row">
     <div class="col-xs-9 affix-content" data-target="#affix-nav">
         <div class="col-xs-12" style="min-height: 500px;">
-          <h2>Conclusion</h2>
-          <div id="conclusion"></div>
+          <h2>Summary</h2>
+          <div id="summary"></div>
         </div>
     </div>
 </div>
@@ -195,25 +196,38 @@ jQuery().ready(function() {
                     if(sitesMax[site] == undefined) { sitesMax[site] = {}; }
                     sitesMax[site][plugin] = plot.getAxes().y2axis.datamax;
                     results++;
-                    if(results == expect) { drawConclusion(); }
+                    if(results == expect) { drawSummary(); }
                 },
                 error: function() {
                     results++;
-                    if(results == expect) { drawConclusion(); }
+                    if(results == expect) { drawSummary(); }
                 }
              });
         });
     });
 });
 
-function drawConclusion() {
+function drawSummary() {
     jQuery.each(plugins, function( x, plugin ) {
-        var data = [];
+        var data = [{
+            data: [],
+            valueLabels: {
+                show: true,
+                labelFormatter: function(v){
+                    v = Number(v);
+                    if(v != 0 && v < 10) {
+                        return v.toFixed(1);
+                    } else {
+                        return v.toFixed(0);
+                    }
+                }
+            }
+        }];
         jQuery.each(sites, function( y, site ) {
             if(sitesMax[site] && sitesMax[site][plugin] != undefined) {
-                data.push([site, sitesMax[site][plugin]]);
+                data[0].data.push([site, sitesMax[site][plugin]]);
             } else {
-                data.push([site, 0]);
+                data[0].data.push([site, 0]);
             }
         });
         var graph_options = {
@@ -236,8 +250,8 @@ function drawConclusion() {
             legend:    standard_legend
         };
         var graph_id = String('graph_'+plugin).replace(/[^a-zA-Z0-9-_]/, '_');
-        jQuery('#conclusion').append('<div class="panel panel-default"><div class="panel-heading"><h3>'+plugin+'</h3><\/div><div class="panel-body"><div id="'+graph_id+'" style="height: 200px; width: 800px;"><\/div><\/div><\/div>');
-        var plot = jQuery.plot('#'+graph_id, [data], graph_options);
+        jQuery('#summary').append('<div class="panel panel-default"><div class="panel-heading"><h3>'+plugin+'</h3><\/div><div class="panel-body"><div id="'+graph_id+'" style="height: 200px; width: 800px;"><\/div><\/div><\/div>');
+        var plot = jQuery.plot('#'+graph_id, data, graph_options);
         plot.draw();
 
     });
