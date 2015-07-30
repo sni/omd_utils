@@ -101,7 +101,10 @@ sed -e "s|/omd/sites/$OMD_SITE/share/thruk|$THRUK|g" \
     -i ~/etc/thruk/apache.conf \
     -i ~/etc/thruk/fcgid_env.sh
 
-sed -e 's/^exec/export PERL5LIB="$PERL5LIB:$OMD_ROOT\/share\/thruk\/lib\/";\nexec/' \
+sed -e 's%^exec%export PERL5LIB="$PERL5LIB:'$THRUK'/lib";\nexec%' \
+    -i ~/etc/thruk/fcgid_env.sh
+
+sed -e 's%THRUK_FCGI_BIN="$OMD_ROOT.*$%THRUK_FCGI_BIN="'$THRUK'/script/thruk_fastcgi.pl"%' \
     -i ~/etc/thruk/fcgid_env.sh
 
 test -f $THRUK/.author || touch $THRUK/.author
