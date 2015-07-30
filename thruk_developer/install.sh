@@ -104,7 +104,7 @@ sed -e "s|/omd/sites/$OMD_SITE/share/thruk|$THRUK|g" \
 sed -e 's/^exec/export PERL5LIB="$PERL5LIB:$OMD_ROOT\/share\/thruk\/lib\/";\nexec/' \
     -i ~/etc/thruk/fcgid_env.sh
 
-touch $THRUK/.author
+test -f $THRUK/.author || touch $THRUK/.author
 
 omd reload apache
 
