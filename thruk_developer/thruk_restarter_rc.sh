@@ -23,7 +23,7 @@ case "$1" in
     start)
         echo -n "Starting $NAME..."
         mkdir -p $OMD_ROOT/tmp/run
-        $DAEMON >> var/log/thruk_restarter.log 2>&1 &
+        $DAEMON >> $OMD_ROOT/var/log/thruk_restarter.log 2>&1 &
         if [ $? -eq 0 ]; then
             echo "OK"
         else

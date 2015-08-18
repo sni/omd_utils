@@ -13,6 +13,7 @@ my $pidfile  = $ENV{'OMD_ROOT'}."/tmp/run/thruk_restarter.lock";
 
 ############################################################
 _check_lock();
+$| = 1;
 
 ############################################################
 my $filter   = qr/(?:\/|^)(?![.#_]).+(?:\.yml$|\.yaml$|\.conf|\.pm|\.tt)$/;
@@ -21,19 +22,23 @@ my $exclude  = [
         File::Spec->catdir($app_root, 'root'),
         qr(/\.[^/]*/?$),    # match hidden dirs
 ];
+my @plugins = glob($ENV{'OMD_ROOT'}.'/etc/thruk/plugins-enabled/*/lib');
+my $directories = [
+                      $app_root."/lib",
+                      $app_root."/plugins",
+                      $app_root."/script",
+                      $app_root."/templates",
+                      $ENV{'OMD_ROOT'}.'/etc/thruk',
+		      @plugins,
+];
 my $watcher =
     File::ChangeNotify->instantiate_watcher(
-        directories => [
-                         $app_root."/lib",
-                         $app_root."/plugins",
-                         $app_root."/script",
-                         $app_root."/templates",
-                         $ENV{'OMD_ROOT'}.'/etc/thruk'
-                       ],
+        directories => $directories,
         filter      => $filter,
         exclude     => $exclude,
 );
 
+_log("$0 started with $$");
 while (1) {
     my @events = $watcher->wait_for_events();
     _handle_events(@events);
@@ -90,6 +95,6 @@ sub _check_lock {
 sub _log {
     my $text = shift;
     my $date = scalar localtime;
-    print "[", $date, "] ";
-    print $text, "\n";
+    print STDERR "[", $date, "] ";
+    print STDERR $text, "\n";
 }
