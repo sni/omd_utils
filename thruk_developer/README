@@ -14,10 +14,14 @@ All steps have to be done as site user
 
    %> cd ~/local/share && git clone git://github.com/sni/omd_utils.git
 
-3. run the install script
+3. install perl dependencies:
+
+   #> apt-get install libfile-changenotify-perl
+
+4. run the install script
 
    %> ~/local/share/omd_utils/thruk_developer/install.sh ~/local/share/Thruk
 
-4. start omd
+5. start omd
 
    %> omd start
