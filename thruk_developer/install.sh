@@ -94,8 +94,8 @@ for theme in $(ls -1 $THRUK/plugins/plugins-enabled/); do
     ln -s $THRUK/plugins/plugins-enabled/$theme ~/etc/thruk/plugins-enabled/
 done
 
-mv etc/thruk/usercontent etc/thruk/usercontent.orig
-ln -s ~/local/share/Thruk/root/thruk/usercontent etc/thruk/usercontent
+mv ~/etc/thruk/usercontent ~/etc/thruk/usercontent.orig
+ln -s ~/local/share/Thruk/root/thruk/usercontent ~/etc/thruk/usercontent
 
 sed -e "s|/omd/sites/$OMD_SITE/share/thruk|$THRUK|g" \
     -i ~/etc/thruk/apache.conf \
