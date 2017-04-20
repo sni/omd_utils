@@ -107,9 +107,11 @@ sed -e 's%^exec%export PERL5LIB="$PERL5LIB:'$THRUK'/lib";\nexec%' \
 sed -e 's%THRUK_FCGI_BIN="$OMD_ROOT.*$%THRUK_FCGI_BIN="'$THRUK'/script/thruk_fastcgi.pl"%' \
     -i ~/etc/thruk/fcgid_env.sh
 
-test -f $THRUK/.author || touch $THRUK/.author
+echo '' >> ~/.profile
+echo 'export PERL5LIB="$PERL5LIB:'$THRUK'/lib";' >> ~/.profile
+echo 'export PATH='$THRUK'/script/:$PATH' >> ~/.profile
 
-omd reload apache
+test -f $THRUK/.author || touch $THRUK/.author
 
 echo "installation finished"
 
