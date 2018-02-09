@@ -108,7 +108,7 @@ sed -e 's%THRUK_FCGI_BIN="$OMD_ROOT.*$%THRUK_FCGI_BIN="'$THRUK'/script/thruk_fas
     -i ~/etc/thruk/fcgid_env.sh
 
 echo '' >> ~/.profile
-echo 'export PERL5LIB="$PERL5LIB:'$THRUK'/lib";' >> ~/.profile
+echo 'export PERL5LIB="'$THRUK'/lib:$PERL5LIB";' >> ~/.profile
 echo 'export PATH='$THRUK'/script/:$PATH' >> ~/.profile
 
 test -f $THRUK/.author || touch $THRUK/.author
