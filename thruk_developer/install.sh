@@ -97,15 +97,21 @@ done
 rm -rf ~/etc/thruk/usercontent
 ln -s $THRUK/root/thruk/usercontent ~/etc/thruk/usercontent
 
+FCGIENV=~/etc/thruk/fcgid_env.sh
+if test -e ~/etc/thruk/fcgid.thruk; then
+  FCGIENV=~/etc/thruk/fcgid.thruk
+fi
+
 sed -e "s|/omd/sites/$OMD_SITE/share/thruk|$THRUK|g" \
     -i ~/etc/thruk/apache.conf \
-    -i ~/etc/thruk/fcgid_env.sh
+    -i $FCGIENV
 
 sed -e 's%^exec%export PERL5LIB="$PERL5LIB:'$THRUK'/lib";\nexec%' \
-    -i ~/etc/thruk/fcgid_env.sh
+    -i $FCGIENV
 
 sed -e 's%THRUK_FCGI_BIN="$OMD_ROOT.*$%THRUK_FCGI_BIN="'$THRUK'/script/thruk_fastcgi.pl"%' \
-    -i ~/etc/thruk/fcgid_env.sh
+    -i $FCGIENV \
+    -i ~/etc/thruk/fcgid.thruk
 
 echo '' >> ~/.profile
 echo 'export PERL5LIB="'$THRUK'/lib:$PERL5LIB";' >> ~/.profile
