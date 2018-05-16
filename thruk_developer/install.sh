@@ -119,5 +119,8 @@ echo 'export PATH='$THRUK'/script/:$PATH' >> ~/.profile
 
 test -f $THRUK/.author || touch $THRUK/.author
 
+# make cronjobs use local thruk
+sed -e "s|^thruk_bin.*|thruk_bin = thruk|g" -i ~/etc/thruk/thruk.conf
+
 echo "installation finished"
 
