@@ -113,6 +113,9 @@ sed -e 's%THRUK_FCGI_BIN="$OMD_ROOT.*$%THRUK_FCGI_BIN="'$THRUK'/script/thruk_fas
     -i $FCGIENV \
     -i ~/etc/thruk/fcgid.thruk
 
+sed -e 's%:.*/script/thruk_auth%:'$THRUK'/script/thruk_auth%' \
+    -i ~/etc/apache/conf.d/thruk_cookie_auth.conf
+
 echo '' >> ~/.profile
 echo 'export PERL5LIB="'$THRUK'/lib:$PERL5LIB";' >> ~/.profile
 echo 'export PATH='$THRUK'/script/:$PATH' >> ~/.profile
