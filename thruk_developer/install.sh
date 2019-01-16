@@ -101,7 +101,7 @@ rm -rf ~/etc/thruk/bp/bp_filter.pm
 ln -s $THRUK/examples/bp_filter.pm ~/etc/thruk/bp/bp_filter.pm
 
 rm -rf ~/etc/thruk/bp/bp_functions.pm
-ln -s $THRUK/etc/thruk/bp/bp_functions.pm ~/etc/thruk/bp/bp_functions.pm
+ln -s $THRUK/examples/bp_functions.pm ~/etc/thruk/bp/bp_functions.pm
 
 FCGIENV=~/etc/thruk/fcgid_env.sh
 if test -e ~/etc/thruk/fcgid.thruk; then
