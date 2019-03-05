@@ -9,7 +9,7 @@ function realpath {
         cd "$back"
         return 0
     fi
-    local link ls tries=0 
+    local link ls tries=0
     while [ -h "$path" ]; do
         ls=$(ls -ld "$path")
         link=$(expr "$ls" : '.*-> \(.*\)$')
@@ -120,7 +120,8 @@ sed -e 's%THRUK_FCGI_BIN="$OMD_ROOT.*$%THRUK_FCGI_BIN="'$THRUK'/script/thruk_fas
     -i ~/etc/thruk/fcgid.thruk
 
 sed -e 's%:.*/script/thruk_auth%:'$THRUK'/script/thruk_auth%' \
-    -i ~/etc/apache/conf.d/thruk_cookie_auth.conf
+    -i ~/etc/apache/conf.d/thruk_cookie_auth.conf \
+    -i ~/etc/thruk/apache_cookie_auth.conf
 
 echo '' >> ~/.profile
 echo 'export PERL5LIB="'$THRUK'/lib:$PERL5LIB";' >> ~/.profile
