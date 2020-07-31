@@ -33,7 +33,7 @@ case "$1" in
     stop)
         echo -n "Stopping $NAME..."
         pid=`cat $PIDFILE 2>/dev/null`
-        if [ -z $pid ]; then
+        if [ -z $pid ] || ! kill -0 $pid >/dev/null 2>&1; then
             echo ". Not running."
         else
             kill $pid
