@@ -1,0 +1,6 @@
+#!/bin/bash
+
+source $OMD_ROOT/.profile
+$* | sed \
+    -e 's|^PATH=\(.*\)|PATH='$PATH'|g' \
+    -e 's|$OMD_ROOT/bin/thruk|/usr/bin/env thruk|g'

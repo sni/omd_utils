@@ -131,6 +131,12 @@ test -f $THRUK/.author || touch $THRUK/.author
 
 # make cronjobs use local thruk
 sed -e "s|^thruk_bin.*|thruk_bin = thruk|g" -i ~/etc/thruk/thruk.conf
+cp $BASE/thruk_dev_cron_replace ~/local/bin
+omd reset etc/init.d/crontab
+sed -e 's|^MERGECRONTABS="\(.*\)"|MERGECRONTABS="$OMD_ROOT/local/bin/thruk_dev_cron_replace \1"|g' -i ~/etc/init.d/crontab
+
+source ~/.profile
+thruk cron install
 
 echo "installation finished"
 
