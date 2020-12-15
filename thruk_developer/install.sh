@@ -123,9 +123,14 @@ sed -e 's%:.*/script/thruk_auth%:'$THRUK'/script/thruk_auth%' \
     -i ~/etc/apache/conf.d/thruk_cookie_auth.conf \
     -i ~/etc/thruk/apache_cookie_auth.conf
 
-echo '' >> ~/.profile
-echo 'export PERL5LIB="'$THRUK'/lib:$PERL5LIB";' >> ~/.profile
-echo 'export PATH='$THRUK'/script/:$PATH' >> ~/.profile
+if test -d ~/etc/profile.d/; then
+    echo 'export PERL5LIB="'$THRUK'/lib:$PERL5LIB";'  > ~/etc/profile.d/thruk_dev.sh
+    echo 'export PATH='$THRUK'/script/:$PATH'        >> ~/etc/profile.d/thruk_dev.sh
+else
+    echo '' >> ~/.profile
+    echo 'export PERL5LIB="'$THRUK'/lib:$PERL5LIB";' >> ~/.profile
+    echo 'export PATH='$THRUK'/script/:$PATH' >> ~/.profile
+fi
 
 test -f $THRUK/.author || touch $THRUK/.author
 
