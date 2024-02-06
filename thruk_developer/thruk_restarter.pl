@@ -72,9 +72,9 @@ sub _handle_events {
             _log(" - $path ($type)");
         }
 
-        if(-e $ENV{'OMD_ROOT'}."/.THRUK_RESTART_DISABLED") {
-            _log("skipped restart by .THRUK_RESTART_DISABLED file");
-            next;
+        if(-e $ENV{'OMD_ROOT'}."/.THRUK_RESTARTER_DISABLED") {
+            _log("skipped restart by .THRUK_RESTARTER_DISABLED file");
+            return;
         }
 
         _log("Attempting to restart the server");
