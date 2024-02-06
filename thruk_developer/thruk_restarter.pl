@@ -72,6 +72,11 @@ sub _handle_events {
             _log(" - $path ($type)");
         }
 
+        if(-e $ENV{'OMD_ROOT'}."/.THRUK_RESTART_DISABLED") {
+            _log("skipped restart by .THRUK_RESTART_DISABLED file");
+            next;
+        }
+
         _log("Attempting to restart the server");
 
         # just kill the perl process, apache will spawn a new one
