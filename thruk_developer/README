@@ -1,18 +1,21 @@
-Thruk Developer integrates Thruks current git verion into OMD
+# Thruk Developer
 
-### WARNING ###
-this step cannot be reverted by script, so only do this in test sites!
+this tool integrates Thruks current git version into OMD.
 
+---
+WARNING: this step cannot be reverted by script,
+so only do this in test sites!
+---
 
 All steps have to be done as site user
 
 1. clone thruk from github
 
-   %> cd ~/local/share && git clone git://github.com/sni/Thruk.git
+   %> cd ~/local/share && git clone https://github.com/sni/Thruk.git
 
 2. clone omd utils from github
 
-   %> cd ~/local/share && git clone git://github.com/sni/omd_utils.git
+   %> cd ~/local/share && git clone https://github.com/sni/omd_utils.git
 
 3. install perl dependencies:
 
@@ -22,6 +25,10 @@ All steps have to be done as site user
 
    %> ~/local/share/omd_utils/thruk_developer/install.sh ~/local/share/Thruk
 
-5. start omd
+5. in case perl still complains
+
+   %> cpanm -n Type::Tiny::Enum
+
+6. start omd
 
    %> omd start
