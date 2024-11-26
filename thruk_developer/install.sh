@@ -121,6 +121,7 @@ sed -e 's%THRUK_FCGI_BIN="$OMD_ROOT.*$%THRUK_FCGI_BIN="'$THRUK'/script/thruk_fas
 
 sed -e 's%:.*/script/thruk_auth%:'$THRUK'/script/thruk_auth%' \
     -i ~/etc/apache/conf.d/thruk_cookie_auth.conf \
+    -i ~/etc/thruk/apache_cookie_auth_sso-support.conf \
     -i ~/etc/thruk/apache_cookie_auth.conf
 
 if test -d ~/etc/profile.d/; then
