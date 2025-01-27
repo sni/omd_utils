@@ -13,7 +13,7 @@ function realpath {
     while [ -h "$path" ]; do
         ls=$(ls -ld "$path")
         link=$(expr "$ls" : '.*-> \(.*\)$')
-        if expr >/dev/null "$link" : '/.*' 
+        if expr >/dev/null "$link" : '/.*'
         then path="$link"
         else path=$(dirname "$path")/"$link"
         fi
@@ -25,7 +25,7 @@ function realpath {
         return 1
     fi
     link=$(basename "$path")
-    path=$(dirname "$path") 
+    path=$(dirname "$path")
     cd "$path"
     echo "$(/bin/pwd)"/"$link"
     cd "$back"
@@ -39,7 +39,7 @@ fi
 THRUK=$1
 
 if [ -z $OMD_ROOT ]; then
-    echo "Thruk Developer is intented for OMD only";
+    echo "Thruk Developer is intended for OMD only";
     exit 1;
 fi
 
@@ -76,7 +76,7 @@ BASE=`realpath $(dirname $0)`;
 rm -f ~/etc/init.d/thruk_restarter ~/etc/rc.d/20-thruk_restarter
 cp $BASE/thruk_restarter_rc.sh ~/etc/init.d/thruk_restarter
 chmod 755 ~/etc/init.d/thruk_restarter
-sed -e 's|###DAEMON###|$OMD_ROOT/local/bin/thruk_restarter.pl|g' -i ~/etc/init.d/thruk_restarter
+sed -e 's|###DAEMON###|local/bin/thruk_restarter.pl|g' -i ~/etc/init.d/thruk_restarter
 ln -s ../init.d/thruk_restarter ~/etc/rc.d/20-thruk_restarter
 
 cp $BASE/thruk_restarter.pl ~/local/bin
@@ -145,4 +145,3 @@ source ~/.profile
 thruk cron install
 
 echo "installation finished"
-
