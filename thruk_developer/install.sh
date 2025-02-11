@@ -48,18 +48,20 @@ if [ ! -s $THRUK/lib/Thruk.pm ]; then
     exit 1;
 fi
 
-echo ""
-echo ""
-echo "STOP! this command is supposed to run in development sites only"
-echo "it cannot be undone and will break normal OMD updates."
-echo "This site cannot be used for anything except thruk afterwards."
-echo ""
-echo -n "continue? [y|N] > "
-read -a key -n 1
-echo ""
-if [ "$key" != 'y' ]; then
-    echo "canceled"
-    exit 1;
+if [ "$NONINTERACTIVE" != "1" ]; then
+    echo ""
+    echo ""
+    echo "STOP! this command is supposed to run in development sites only"
+    echo "it cannot be undone and will break normal OMD updates."
+    echo "This site cannot be used for anything except thruk afterwards."
+    echo ""
+    echo -n "continue? [y|N] > "
+    read -a key -n 1
+    echo ""
+    if [ "$key" != 'y' ]; then
+        echo "canceled"
+        exit 1;
+    fi
 fi
 
 # check perl modules
@@ -138,10 +140,11 @@ test -f $THRUK/.author || touch $THRUK/.author
 # make cronjobs use local thruk
 sed -e "s|^thruk_bin.*|thruk_bin = thruk|g" -i ~/etc/thruk/thruk.conf
 cp $BASE/thruk_dev_cron_replace ~/local/bin
-omd reset etc/init.d/crontab
-sed -e 's|^MERGECRONTABS="\(.*\)"|MERGECRONTABS="$OMD_ROOT/local/bin/thruk_dev_cron_replace \1"|g' -i ~/etc/init.d/crontab
+sed -e 's|^MERGECRONTABS=.*|MERGECRONTABS="$OMD_ROOT/local/bin/thruk_dev_cron_replace $OMD_ROOT/bin/merge-crontabs"|g' -i ~/etc/init.d/crontab
 
-source ~/.profile
-thruk cron install
+if [ $(crontab -l | wc -l) -gt 0 ]; then
+    source ~/.profile
+    thruk cron install
+fi
 
 echo "installation finished"
