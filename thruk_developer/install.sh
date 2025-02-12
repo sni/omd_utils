@@ -142,9 +142,6 @@ sed -e "s|^thruk_bin.*|thruk_bin = thruk|g" -i ~/etc/thruk/thruk.conf
 cp $BASE/thruk_dev_cron_replace ~/local/bin
 sed -e 's|^MERGECRONTABS=.*|MERGECRONTABS="$OMD_ROOT/local/bin/thruk_dev_cron_replace $OMD_ROOT/bin/merge-crontabs"|g' -i ~/etc/init.d/crontab
 
-if [ $(crontab -l | wc -l) -gt 0 ]; then
-    source ~/.profile
-    thruk cron install
-fi
+thruk cron install
 
 echo "installation finished"
